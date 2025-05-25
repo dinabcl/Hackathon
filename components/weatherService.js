@@ -10,21 +10,38 @@ export const getWeather = async (city) => {
       throw new Error(data.message);
     }
 
-    // Extract daily data (API gives 3-hour intervals, so we pick one per day)
-    const dailyForecast = data.list.filter((reading, index) => index % 8 === 0); // Approx. every 24h
+    // Group readings by day
+    const days = {};
+    data.list.forEach((reading) => {
+      const date = new Date(reading.dt * 1000).toDateString();
+      if (!days[date]) days[date] = [];
+      days[date].push(reading);
+    });
+
+    // For each day, find the max and min temps
+    const forecast = Object.entries(days).map(([date, readings]) => {
+      const temps = readings.map(r => r.main.temp);
+      const maxTemps = readings.map(r => r.main.temp_max);
+      const minTemps = readings.map(r => r.main.temp_min);
+      // Use the first reading for description, humidity, windSpeed
+      const first = readings[0];
+      return {
+        date,
+        temp: first.main.temp,
+        max: Math.max(...maxTemps),
+        min: Math.min(...minTemps),
+        description: first.weather[0].description,
+        humidity: first.main.humidity,
+        windSpeed: first.wind.speed,
+      };
+    });
 
     const result = {
       city: data.city.name,
-      forecast: dailyForecast.map((day) => ({
-        date: new Date(day.dt * 1000).toDateString(),
-        temp: day.main.temp,
-        description: day.weather[0].description,
-        humidity: day.main.humidity,
-        windSpeed: day.wind.speed,
-      })),
+      forecast,
     };
 
-    console.log('Fetched Weather Data:', result); // Log the fetched data
+    console.log('Fetched Weather Data:', result);
     return result;
   } catch (error) {
     console.error('Error fetching forecast:', error);

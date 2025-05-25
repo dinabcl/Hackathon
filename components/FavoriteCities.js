@@ -1,16 +1,24 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  ActivityIndicator,
+  TouchableOpacity,
+} from 'react-native';
 import { getWeather } from './weatherService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { convertTemp, getTempColor } from './utils';
-import { useFocusEffect } from '@react-navigation/native'; 
+import { useFocusEffect } from '@react-navigation/native';
 
 const FavoriteCities = ({ isCelsius }) => {
   const [favoriteCities, setFavoriteCities] = useState([]);
   const [favoriteWeather, setFavoriteWeather] = useState({});
   const [loading, setLoading] = useState(true);
+  const [expandedCity, setExpandedCity] = useState(null); // 👈 To track expanded city
 
-  // Function to load favorite cities from AsyncStorage
+  // Load favorites from AsyncStorage
   const loadFavorites = async () => {
     try {
       const savedFavorites = await AsyncStorage.getItem('favoriteCities');
@@ -24,7 +32,7 @@ const FavoriteCities = ({ isCelsius }) => {
     }
   };
 
-  // Function to fetch weather data
+  // Fetch weather for each favorite city
   const fetchFavoriteWeather = async () => {
     if (favoriteCities.length === 0) return;
     try {
@@ -32,26 +40,24 @@ const FavoriteCities = ({ isCelsius }) => {
       const newWeather = {};
       for (let city of favoriteCities) {
         const data = await getWeather(city);
-        newWeather[city] = data.forecast[0]; 
+        newWeather[city] = data.forecast[0]; // assuming forecast[0] has temp, min, max, etc.
       }
       setFavoriteWeather(newWeather);
     } catch (error) {
-      console.error('Error fetching favorite cities weather:', error);
+      console.error('Error fetching weather:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Reload data when a city is added or removed
   useEffect(() => {
     loadFavorites();
   }, []);
 
   useEffect(() => {
     fetchFavoriteWeather();
-  }, [favoriteCities]); // Re-fetch when cities change
+  }, [favoriteCities]);
 
-  // Ensure reload when navigating back to this screen
   useFocusEffect(
     useCallback(() => {
       loadFavorites();
@@ -73,15 +79,55 @@ const FavoriteCities = ({ isCelsius }) => {
         data={favoriteCities}
         keyExtractor={(item, index) => index.toString()}
         renderItem={({ item }) => (
-          <View style={styles.forecastItem}>
+          <TouchableOpacity
+            onPress={() =>
+              setExpandedCity(expandedCity === item ? null : item)
+            }
+            style={styles.forecastItem}
+          >
             <Text style={styles.cityName}>{item}</Text>
-            <Text style={[styles.temp, { color: getTempColor(favoriteWeather[item]?.temp, isCelsius) }]}>
-              🌡 <Text>{favoriteWeather[item]?.temp ? convertTemp(favoriteWeather[item].temp, isCelsius).toFixed(1) : '--'}°{isCelsius ? 'C' : 'F'}</Text>
+            <Text
+              style={[
+                styles.temp,
+                {
+                  color: getTempColor(
+                    favoriteWeather[item]?.temp,
+                    isCelsius
+                  ),
+                },
+              ]}
+            >
+              🌡{' '}
+              <Text>
+                {favoriteWeather[item]?.temp
+                  ? convertTemp(favoriteWeather[item].temp, isCelsius).toFixed(1)
+                  : '--'}
+                °{isCelsius ? 'C' : 'F'}
+              </Text>
             </Text>
             <Text style={styles.condition}>
-              ☁ <Text>{favoriteWeather[item]?.description ? favoriteWeather[item].description : '--'}</Text>
+              ☁{' '}
+              <Text>
+                {favoriteWeather[item]?.description || '--'}
+              </Text>
             </Text>
-          </View>
+
+            {/* ▼ Dropdown */}
+            {expandedCity === item && favoriteWeather[item] && (
+              <View style={styles.dropdown}>
+                <Text>
+                  🔼 High:{' '}
+                  {convertTemp(favoriteWeather[item].max, isCelsius).toFixed(1)}°
+                  {isCelsius ? 'C' : 'F'}
+                </Text>
+                <Text>
+                  🔽 Low:{' '}
+                  {convertTemp(favoriteWeather[item].min, isCelsius).toFixed(1)}°
+                  {isCelsius ? 'C' : 'F'}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
         )}
       />
     </View>
@@ -91,41 +137,72 @@ const FavoriteCities = ({ isCelsius }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#e3f2fd',
-    padding: 15,
-    backgroundColor: '#bbdefb',
+    backgroundColor: '#f4f8fb',
+    padding: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 25,
     textAlign: 'center',
+    color: '#1565c0',
+    letterSpacing: 1,
   },
   forecastItem: {
-    backgroundColor: '#e3f2fd',
-    padding: 15,
-    marginVertical: 5,
-    borderRadius: 10,
-    width: '85%',
+    backgroundColor: '#ffffff',
+    padding: 22,
+    marginVertical: 10,
+    borderRadius: 18,
+    width: '95%',
     alignItems: 'center',
     alignSelf: 'center',
+    shadowColor: '#1565c0',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.10,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#e3eaf2',
+    transition: 'all 0.2s',
   },
   cityName: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#1976d2',
+    marginBottom: 4,
+    letterSpacing: 0.5,
   },
   temp: {
-    fontSize: 18,
-    marginVertical: 5,
+    fontSize: 20,
+    marginVertical: 4,
+    fontWeight: '600',
   },
   condition: {
     fontSize: 16,
+    color: '#607d8b',
+    marginBottom: 2,
+  },
+  dropdown: {
+    marginTop: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    backgroundColor: '#e3f2fd',
+    borderRadius: 14,
+    width: '100%',
+    alignItems: 'center',
+    shadowColor: '#1976d2',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#bbdefb',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#e3f2fd',
+    backgroundColor: '#f4f8fb',
   },
 });
 
