@@ -1,20 +1,28 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createDrawerNavigator } from '@react-navigation/drawer';
+import Home from './components/Home';
+import Settings from './components/Settings';
+import FavoriteCities from './components/FavoriteCities'; 
+
+const Drawer = createDrawerNavigator();
 
 export default function App() {
+  const [isCelsius, setIsCelsius] = useState(true);
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <NavigationContainer>
+      <Drawer.Navigator initialRouteName="Home">
+        <Drawer.Screen name="Home">
+          {props => <Home {...props} isCelsius={isCelsius} setIsCelsius={setIsCelsius} />}
+        </Drawer.Screen>
+        <Drawer.Screen name="Settings">
+          {props => <Settings {...props} isCelsius={isCelsius} setIsCelsius={setIsCelsius} />}
+        </Drawer.Screen>
+        <Drawer.Screen name="Favorite Cities">
+          {props => <FavoriteCities {...props} isCelsius={isCelsius} setIsCelsius={setIsCelsius} />}
+        </Drawer.Screen>
+      </Drawer.Navigator>
+    </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
