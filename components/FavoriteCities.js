@@ -190,6 +190,8 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     width: '100%',
     alignItems: 'center',
+    flexDirection: 'row', // <-- Make items appear in a row
+    justifyContent: 'space-evenly', // <-- Even spacing between high/low
     shadowColor: '#1976d2',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
