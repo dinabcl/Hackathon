@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   View, Text, TextInput, TouchableOpacity, StyleSheet, 
-  FlatList, KeyboardAvoidingView, Platform 
-} from 'react-native';
+  FlatList, KeyboardAvoidingView, Platform, Image 
+} from 'react-native'; // Add Image
 import { getWeather } from './weatherService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { convertTemp, getTempColor } from './utils';
@@ -52,7 +52,12 @@ export default function Home({ isCelsius, setIsCelsius }) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <Text style={styles.title}>Storm Watch</Text>
+      {/* Replace the text header with the image */}
+      <Image 
+        source={require('../assets/storm_watch_logo.png')} // Update the path to your image
+        style={styles.logo} 
+        resizeMode="contain" 
+      />
       <View style={styles.inputButtonContainer}>
         <TextInput
           value={city}
@@ -101,14 +106,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#f6fafd',
     padding: 14,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 18,
-    color: '#0d47a1',
-    textAlign: 'center',
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
+  logo: {
+    width: '85%',    // Increased from 80%
+    height: 120,     // Increased from 100
+    alignSelf: 'center',
+    marginBottom: 20,
   },
   inputButtonContainer: {
     flexDirection: 'row',
